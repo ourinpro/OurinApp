@@ -47,6 +47,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _usernameState = MutableStateFlow(settingsManager.username)
     val usernameState: StateFlow<String> = _usernameState.asStateFlow()
 
+    private val _cookiesState = MutableStateFlow(settingsManager.cookies)
+    val cookiesState: StateFlow<String> = _cookiesState.asStateFlow()
+
     private val _fetchState = MutableStateFlow<FetchState>(FetchState.Idle)
     val fetchState: StateFlow<FetchState> = _fetchState.asStateFlow()
 
@@ -88,6 +91,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _usernameState.value = newName
     }
 
+    fun updateCookies(newCookies: String) {
+        settingsManager.cookies = newCookies
+        _cookiesState.value = newCookies
+    }
+
     // Fetches info and formats
     fun fetchVideoMetadata(videoUrl: String) {
         if (videoUrl.isBlank()) {
@@ -102,8 +110,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val api = ApiClient.getService(settingsManager.baseUrl)
                 
                 // Fetch info and formats in parallel or sequence
-                val info = api.getVideoInfo(videoUrl)
-                val formatsRes = api.getFormats(videoUrl)
+                val cookiesStr = settingsManager.cookies.takeIf { it.isNotBlank() }
+                val info = api.getVideoInfo(videoUrl, cookiesStr)
+                val formatsRes = api.getFormats(videoUrl, cookiesStr)
                 
                 val allFormats = formatsRes.formats
                 val hasVideo = { f: Format -> f.vcodec != null && f.vcodec != "none" }
@@ -155,7 +164,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         activePollJob = viewModelScope.launch {
             try {
                 val api = ApiClient.getService(settingsManager.baseUrl)
-                val response = api.startDownload(DownloadRequest(videoUrl, selectedQualityId))
+                val response = api.startDownload(
+                    DownloadRequest(
+                        url = videoUrl,
+                        quality = selectedQualityId,
+                        cookies = settingsManager.cookies.takeIf { it.isNotBlank() }
+                    )
+                )
                 
                 if (!response.status || response.jobId == null) {
                     _downloadJobState.value = DownloadJobState.Error(response.error ?: "Failed to start server download job")

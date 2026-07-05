@@ -2,18 +2,21 @@ package com.example.api
 
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface ApiService {
     @GET("info")
     suspend fun getVideoInfo(
-        @Query("url") url: String
+        @Query("url") url: String,
+        @Header("X-Cookies") cookies: String? = null
     ): VideoInfo
 
     @GET("formats")
     suspend fun getFormats(
-        @Query("url") url: String
+        @Query("url") url: String,
+        @Header("X-Cookies") cookies: String? = null
     ): FormatsResponse
 
     @POST("download")

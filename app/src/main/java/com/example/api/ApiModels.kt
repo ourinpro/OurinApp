@@ -39,7 +39,8 @@ data class FormatsResponse(
 data class DownloadRequest(
     val url: String,
     val quality: String,
-    @Json(name = "expires_in") val expiresIn: Int = 3600
+    @Json(name = "expires_in") val expiresIn: Int = 3600,
+    val cookies: String? = null
 )
 
 @JsonClass(generateAdapter = true)
